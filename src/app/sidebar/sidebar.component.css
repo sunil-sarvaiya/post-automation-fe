@@ -1,0 +1,21 @@
+.border-transparent {
+  border-color: transparent !important;
+}
+
+a.active {
+  background: #e3f2fd !important;
+  color: #1976d2 !important;
+  font-weight: 600;
+  border-left-color: #1976d2 !important;
+}
+
+a.nav-link {
+  color: #333;
+  text-decoration: none;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+a.nav-link:hover {
+  background: #e0e0e0;
+}

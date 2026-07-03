@@ -1,0 +1,7 @@
+tbody tr {
+  cursor: pointer;
+}
+
+[class*="border rounded"] {
+  cursor: pointer;
+}
