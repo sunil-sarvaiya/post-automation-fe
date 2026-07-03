@@ -1,63 +1,140 @@
-<div class="posted">
-  <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-      <h3 class="fw-bold mb-1">Posted</h3>
-      <p class="text-muted mb-0">{{ posts.length }} posts published this week</p>
+      <h3>Published Posts</h3>
+      <small>{{ total }} Posts</small>
     </div>
-    <div>
-      <select class="form-select form-select-sm">
-        <option>All Platforms</option>
-        <option>LinkedIn</option>
-        <option>X</option>
-        <option>Instagram</option>
-        <option>Facebook</option>
+    <form [formGroup]="filterForm">
+      <select class="form-select" formControlName="platform">
+        <option *ngFor="let item of platformOptions" [value]="item.value">
+          {{item.label}}
+        </option>
       </select>
-    </div>
-  </div>
+    </form>
 
-  <div class="card border-0 shadow-sm">
+  </div>
+  <div class="card">
     <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
+      <table class="table table-hover align-middle">
         <thead class="table-light">
           <tr>
-            <th class="ps-4">Post</th>
-            <th>Source</th>
-            <th>Type</th>
-            <th>Platform</th>
-            <th>Published</th>
-            <th class="text-center">Likes</th>
-            <th class="text-center">Comments</th>
-            <th class="text-center">Shares</th>
-            <th class="text-center">Engagement</th>
-            <th class="pe-4"></th>
+            <th *ngFor="let col of columns">
+              {{ col.header }}
+            </th>
+            <th>Post Link</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let post of posts">
-            <td class="ps-4">
-              <div class="d-flex flex-column">
-                <span class="fw-medium">{{ post.headline }}</span>
-                <small class="text-muted text-truncate" style="max-width: 220px;">{{ post.content }}</small>
-              </div>
+          <tr *ngIf="loading">
+            <td [attr.colspan]="columns.length + 2" class="text-center py-4">
+              Loading...
             </td>
-            <td><small>{{ post.source }}</small></td>
-            <td><span class="badge bg-light text-dark">{{ post.contentType }}</span></td>
+          </tr>
+          <tr *ngIf="!loading && error">
+            <td [attr.colspan]="columns.length + 2" class="text-center text-danger py-4">
+              {{ error }}
+            </td>
+          </tr>
+          <tr *ngIf="!loading && !error && posts.length === 0">
+            <td [attr.colspan]="columns.length + 2" class="text-center py-4">
+              No posts found
+            </td>
+          </tr>
+          <tr *ngFor="let row of posts">
+            <td *ngFor="let col of columns">
+              <ng-container [ngSwitch]="col.field">
+
+                <span *ngSwitchCase="'platform'" class="badge bg-dark">
+                  {{ getValue(row,col.field) || '-' }}
+                </span>
+
+                <span *ngSwitchCase="'postedAt'">
+                  {{ getValue(row,col.field) ? (getValue(row,col.field) | date:'medium') : '-' }}
+                </span>
+
+                <!-- Default -->
+                <span *ngSwitchDefault>
+                  {{ getValue(row,col.field) || '-' }}
+                </span>
+              </ng-container>
+            </td>
             <td>
-              <span class="badge bg-dark">{{ post.platform }}</span>
+              <a *ngIf="row.postUrl; else noLink" [href]="row.postUrl" target="_blank" rel="noopener noreferrer">
+                View Post
+              </a>
+              <ng-template #noLink>-</ng-template>
             </td>
-            <td><small class="text-muted">{{ post.publishedAt }}</small></td>
-            <td class="text-center fw-medium">{{ post.likes }}</td>
-            <td class="text-center fw-medium">{{ post.comments }}</td>
-            <td class="text-center fw-medium">{{ post.shares }}</td>
-            <td class="text-center">
-              <span class="badge bg-{{ getStatusBadge(post.status) }}">{{ post.engagement }}</span>
-            </td>
-            <td class="pe-4">
-              <button class="btn btn-sm btn-outline-secondary">View</button>
+            <td>
+              <button class="btn btn-outline-primary btn-sm" (click)="openPreview(row)">
+                View
+              </button>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <div class="card-footer" *ngIf="totalPages > 1">
+      <nav aria-label="Posts pagination">
+        <ul class="pagination justify-content-center mb-0">
+          <li class="page-item" [class.disabled]="page === 1">
+            <a class="page-link" href="javascript:void(0)" (click)="goToPage(page - 1)">Previous</a>
+          </li>
+          <li class="page-item" *ngFor="let p of pageNumbers" [class.active]="p === page">
+            <a class="page-link" href="javascript:void(0)" (click)="goToPage(p)">{{ p }}</a>
+          </li>
+          <li class="page-item" [class.disabled]="page === totalPages">
+            <a class="page-link" href="javascript:void(0)" (click)="goToPage(page + 1)">Next</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
   </div>
+
+</div>
+
+<div class="preview-overlay" *ngIf="displayPreview">
+  <div class="preview-modal">
+    <div class="preview-header">
+      <h4>Post Details</h4>
+      <button class="close-btn" (click)="closePreview()">
+        ✕
+      </button>
+    </div>
+    <div class="preview-body">
+      <img *ngIf="selectedPost.imageUrl; else noImage" [src]="selectedPost.imageUrl" class="preview-image">
+      <ng-template #noImage>
+        <p class="text-muted">-</p>
+      </ng-template>
+      <p>
+        {{selectedPost.description || '-'}}
+      </p>
+      <hr>
+      <div class="row text-center">
+        <div class="col">
+          <h6>Platform</h6>
+          {{selectedPost.platform || '-'}}
+        </div>
+
+        <div class="col">
+          <h6>Posted At</h6>
+          {{selectedPost.postedAt ? (selectedPost.postedAt | date:'medium') : '-'}}
+        </div>
+      </div>
+      <div class="text-center mt-3">
+        <a *ngIf="selectedPost.postUrl; else noPostUrl" [href]="selectedPost.postUrl" target="_blank"
+          rel="noopener noreferrer" class="btn btn-sm btn-primary">
+          View Post
+        </a>
+        <ng-template #noPostUrl>-</ng-template>
+      </div>
+    </div>
+    <div class="preview-footer">
+      <button class="btn btn-danger" (click)="closePreview()">
+        Close
+      </button>
+    </div>
+  </div>
+
 </div>

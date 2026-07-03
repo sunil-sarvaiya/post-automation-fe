@@ -28,7 +28,6 @@ export class DashboardComponent {
     { label: 'Total Posted', value: '147', change: '+12 this week', trend: 'up', icon: 'bi-check-circle' },
     { label: 'Pending Review', value: '8', change: '3 high priority', trend: 'up', icon: 'bi-clock' },
     { label: 'Scheduled', value: '23', change: 'Next: Today 3pm', trend: 'up', icon: 'bi-calendar' },
-    { label: 'Avg Engagement', value: '4.8%', change: '+0.6% vs last month', trend: 'up', icon: 'bi-graph-up' }
   ];
 
   reviewQueue: ReviewItem[] = [
