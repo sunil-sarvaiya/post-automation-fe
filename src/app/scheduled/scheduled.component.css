@@ -39,7 +39,7 @@
   inset: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(15, 23, 42, .65);
+  background: rgba(15, 23, 42, .75);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -54,12 +54,13 @@
   width: 1200px;
   max-width: 96vw;
   height: 92vh;
-  background: #fff;
+  background: #1F2937;
+  border: 1px solid #334155;
   border-radius: 16px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
   animation: popup .25s ease;
 
 }
@@ -72,8 +73,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #e9ecef;
-  background: #fff;
+  border-bottom: 1px solid #334155;
+  background: #1E293B;
+  color: #F8FAFC;
   flex-shrink: 0;
 
 }
@@ -82,6 +84,7 @@
 
   margin: 0;
   font-weight: 600;
+  color: #F8FAFC;
 
 }
 
@@ -93,6 +96,7 @@
   display: grid;
   grid-template-columns: 42% 58%;
   overflow: hidden;
+  color: #E5E7EB;
 
 }
 
@@ -102,7 +106,7 @@
 
   padding: 25px;
   overflow-y: auto;
-  border-right: 1px solid #ececec;
+  border-right: 1px solid #334155;
 
 }
 
@@ -112,7 +116,7 @@
 
   padding: 25px;
   overflow-y: auto;
-  background: #f8fafc;
+  background: #111827;
 
 }
 
@@ -149,8 +153,8 @@ textarea.form-control {
   height: 340px;
   border-radius: 12px;
   object-fit: cover;
-  border: 1px solid #ddd;
-  background: #f5f5f5;
+  border: 1px solid #334155;
+  background: #111827;
 
 }
 
@@ -158,23 +162,24 @@ textarea.form-control {
 
 .preview-card {
 
-  background: white;
+  background: #1F2937;
   border-radius: 12px;
   margin-top: 20px;
   padding: 20px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #334155;
 
 }
 
 .preview-card h5 {
 
   font-weight: 600;
+  color: #F8FAFC;
 
 }
 
 .preview-card p {
 
-  color: #555;
+  color: #CBD5E1;
   line-height: 1.7;
 
 }
@@ -187,8 +192,8 @@ textarea.form-control {
   margin: 4px;
   padding: 6px 12px;
   border-radius: 30px;
-  background: #eaf2ff;
-  color: #0d6efd;
+  background: rgba(59, 130, 246, 0.15);
+  color: #93C5FD;
   font-size: 13px;
   font-weight: 500;
 
@@ -227,4 +232,136 @@ textarea.form-control {
     transform: scale(1);
   }
 
+}
+.filter-dialog{
+    width:420px;
+    max-width:95%;
+}
+
+.filter-body{
+    display:flex;
+    flex-direction:column;
+    padding:24px;
+}
+
+.filter-body .form-select{
+    height:42px;
+}
+
+.dialog-footer{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    padding:16px 24px;
+    border-top:1px solid #334155;
+    background: #1E293B;
+}
+
+.multi-select{
+    position: relative;
+    width: 100%;
+}
+
+.multi-select-header{
+    border:1px solid #334155;
+    border-radius:6px;
+    padding:10px 12px;
+    cursor:pointer;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:#111827;
+    color:#FFFFFF;
+    min-height:42px;
+}
+
+.multi-select-dropdown{
+    position:absolute;
+    top:100%;
+    left:0;
+    right:0;
+    background:#111827;
+    border:1px solid #334155;
+    border-radius:6px;
+    margin-top:4px;
+    max-height:220px;
+    overflow-y:auto;
+    z-index:1000;
+    box-shadow:0 6px 15px rgba(0,0,0,.4);
+}
+
+.multi-option{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 14px;
+    cursor:pointer;
+    margin:0;
+    color:#E5E7EB;
+}
+
+.multi-option:hover{
+    background:#273549;
+}
+
+.multi-option input{
+    cursor:pointer;
+}
+.platform-chips{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex-wrap:wrap;
+    position:relative;
+}
+
+.chip{
+    padding:6px 10px;
+    font-size:12px;
+}
+
+.more-chip-wrapper{
+    position:relative;
+    display:inline-block;
+}
+
+.more-chip{
+    cursor:pointer;
+}
+
+.chip-tooltip{
+
+    position:absolute;
+    top:110%;
+    left:0;
+
+    min-width:180px;
+    max-width:260px;
+
+    background:#1F2937;
+    border:1px solid #334155;
+    border-radius:8px;
+
+    padding:10px;
+
+    display:none;
+
+    box-shadow:0 6px 20px rgba(0,0,0,.5);
+
+    z-index:9999;
+}
+
+.more-chip-wrapper:hover .chip-tooltip{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+}
+.save-draft-btns{
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.save-draft-btns .btn{
+    flex: 1;
 }

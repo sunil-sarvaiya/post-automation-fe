@@ -1,37 +1,28 @@
 <div class="container-fluid">
-
   <div class="d-flex justify-content-between align-items-center mb-3">
-
     <div>
-
       <h3>Scheduled Posts</h3>
-
       <small class="text-muted">
-
-        {{scheduledPosts.length}} Scheduled Posts
-
+        {{scheduledPosts?.length}} Scheduled Posts
       </small>
-
     </div>
-
-    <button class="btn btn-primary" (click)="openDialog()">
-
-      <i class="bi bi-plus-circle me-2"></i>
-
-      Schedule New
-
-    </button>
-
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-outline-secondary" (click)="openFilter()" title="Filter">
+        <i class="bi bi-funnel-fill"></i>
+      </button>
+      <button *ngIf="isFilterApplied" class="btn btn-outline-danger" (click)="resetFilter()" title="Clear Filter">
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
+      <button class="btn btn-primary" (click)="openDialog()">
+        <i class="bi bi-plus-circle me-2"></i>
+        Schedule New
+      </button>
+    </div>
   </div>
-
   <div class="card shadow-sm">
-
     <div class="table-responsive">
-
       <table class="table table-hover align-middle mb-0">
-
         <thead class="table-light">
-
           <tr>
             <th *ngFor="let col of columns">
               {{col.header}}
@@ -39,26 +30,45 @@
             <th width="170">
               Actions
             </th>
-
           </tr>
-
         </thead>
-
         <tbody>
-
-          <tr *ngFor="let row of scheduledPosts">
+          <tr *ngFor="let row of filteredPosts">
             <td *ngFor="let col of columns">
               <ng-container [ngSwitch]="col.field">
-                <!-- Platform -->
-                <span *ngSwitchCase="'platform'" class="badge bg-dark">
-                  {{getValue(row,col.field)}}
-                </span>
-                <!-- Status -->
+                <div *ngSwitchCase="'platform'" class="platform-chips">
+
+                  <span class="badge bg-dark chip" *ngFor="let p of row.platform | slice:0:2">
+
+                    {{ p }}
+
+                  </span>
+
+                  <div class="more-chip-wrapper" *ngIf="row.platform.length > 2">
+
+                    <span class="badge bg-secondary more-chip">
+
+                      +{{ row.platform.length - 2 }}
+
+                    </span>
+
+                    <div class="chip-tooltip">
+
+                      <span class="badge bg-dark chip" *ngFor="let p of row.platform | slice:2">
+
+                        {{ p }}
+
+                      </span>
+
+                    </div>
+
+                  </div>
+
+                </div>
                 <span *ngSwitchCase="'status'" class="badge"
                   [ngClass]="'bg-'+getStatusClass(getValue(row,col.field).toString())">
                   {{getValue(row,col.field)}}
                 </span>
-                <!-- Default -->
                 <span *ngSwitchDefault>
                   {{getValue(row,col.field)}}
                 </span>
@@ -75,33 +85,24 @@
                 <i class="bi bi-trash"></i>
               </button>
             </td>
-
           </tr>
-
         </tbody>
-
       </table>
     </div>
   </div>
 </div>
 <div class="dialog-overlay" *ngIf="showDialog">
-
   <div class="dialog-container">
-
     <!-- Header -->
     <div class="dialog-header">
       <h4>
         <i class="bi bi-robot me-2"></i>
-        Schedule AI Post
+        {{ isEdit ? 'Edit Scheduled Post' : 'Schedule AI Post' }}
       </h4>
       <button class="btn-close" (click)="closeDialog()">
       </button>
-
     </div>
-
-
     <div class="dialog-body">
-
       <div class="left-panel">
         <form [formGroup]="scheduleForm">
           <div class="mb-3">
@@ -110,18 +111,34 @@
             </label>
             <textarea rows="5" class="form-control" formControlName="prompt"
               placeholder="Generate a LinkedIn post about AI Agents...">
-            </textarea>
+              </textarea>
           </div>
           <div class="row">
             <div class="col">
-              <label>
-                Platform
-              </label>
-              <select class="form-select" formControlName="platform">
-                <option *ngFor="let item of platformOptions" [value]="item">
-                  {{item}}
-                </option>
-              </select>
+              <label>Platform</label>
+
+              <div class="multi-select">
+
+                <div class="multi-select-header" (click)="togglePlatformDropdown()">
+                  {{ getSelectedPlatforms() || 'Select Platform(s)' }}
+                  <span>▼</span>
+                </div>
+
+                <div class="multi-select-dropdown" *ngIf="showPlatformDropdown">
+
+                  <label class="multi-option" *ngFor="let item of platformOptions">
+
+                    <input type="checkbox" [checked]="isPlatformSelected(item)"
+                      (change)="onPlatformChange(item,$event)">
+
+                    {{ item }}
+
+                  </label>
+
+                </div>
+
+              </div>
+
             </div>
             <div class="col">
               <label>
@@ -147,9 +164,15 @@
               <i class="bi bi-stars me-2"></i>
               Generate Image
             </button>
-            <button class="btn btn-primary">
-              Save Schedule
-            </button>
+            <div class="save-draft-btns">
+  <button class="btn btn-primary">
+    Save Schedule
+  </button>
+
+  <button class="btn btn-outline-primary">
+    Draft Schedule
+  </button>
+</div>
             <button type="button" class="btn btn-outline-secondary" (click)="closeDialog()">
               Cancel
             </button>
@@ -174,9 +197,53 @@
           </span>
         </div>
       </div>
-
     </div>
-
   </div>
-
+</div>
+<div class="dialog-overlay" *ngIf="showFilterDialog">
+  <div class="dialog-container filter-dialog">
+    <!-- Header -->
+    <div class="dialog-header">
+      <h4>
+        <i class="bi bi-funnel me-2"></i>
+        Filter Posts
+      </h4>
+      <button class="btn-close" (click)="closeFilter()">
+      </button>
+    </div>
+    <!-- Body -->
+    <div class="dialog-body filter-body">
+      <div class="mb-4 w-100">
+        <label class="form-label fw-semibold mb-2">
+          Platform
+        </label>
+        <select class="form-select" [(ngModel)]="selectedPlatform">
+          <option *ngFor="let item of platformFilterOptions" [value]="item">
+            {{ item }}
+          </option>
+        </select>
+      </div>
+      <div class="mb-4 w-100">
+        <label class="form-label fw-semibold mb-2">
+          Status
+        </label>
+        <select class="form-select" [(ngModel)]="selectedStatus">
+          <option *ngFor="let item of statusFilterOptions" [value]="item">
+            {{ item }}
+          </option>
+        </select>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <button class="btn btn-outline-secondary" (click)="resetFilter()">
+        Reset
+      </button>
+      <button class="btn btn-secondary" (click)="closeFilter()">
+        Cancel
+      </button>
+      <button class="btn btn-primary" (click)="applyFilter()">
+        Apply Filter
+      </button>
+    </div>
+  </div>
 </div>

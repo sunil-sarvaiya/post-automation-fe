@@ -24,14 +24,15 @@ tbody tr {
     max-width: 95%;
     max-height: 90vh;
 
-    background: #fff;
+    background: #1F2937;
+    border: 1px solid #334155;
     border-radius: 14px;
     overflow: hidden;
 
     display: flex;
     flex-direction: column;
 
-    box-shadow: 0 15px 40px rgba(0, 0, 0, .25);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, .5);
 
     animation: popup .25s ease;
 }
@@ -39,18 +40,20 @@ tbody tr {
 /* Header */
 .preview-header {
     padding: 18px 24px;
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid #334155;
 
     display: flex;
     justify-content: space-between;
     align-items: center;
 
-    background: #fff;
+    background: #1E293B;
+    color: #F8FAFC;
 }
 
 .preview-header h4 {
     margin: 0;
     font-weight: 600;
+    color: #F8FAFC;
 }
 
 /* Close Button */
@@ -59,11 +62,11 @@ tbody tr {
     background: transparent;
     font-size: 24px;
     cursor: pointer;
-    color: #6c757d;
+    color: #94A3B8;
 }
 
 .close-btn:hover {
-    color: #000;
+    color: #F8FAFC;
 }
 
 /* Body */
@@ -71,6 +74,7 @@ tbody tr {
     padding: 24px;
     overflow-y: auto;
     flex: 1;
+    color: #E5E7EB;
 }
 
 /* Image */
@@ -79,13 +83,13 @@ tbody tr {
     height: 350px;
     object-fit: cover;
     border-radius: 10px;
-    background: #f5f5f5;
+    background: #111827;
 }
 
 /* Caption */
 .preview-body p {
     line-height: 1.7;
-    color: #444;
+    color: #CBD5E1;
     margin-top: 15px;
 }
 
@@ -96,8 +100,8 @@ tbody tr {
     margin: 4px;
     border-radius: 20px;
 
-    background: #eef4ff;
-    color: #0d6efd;
+    background: rgba(59, 130, 246, 0.15);
+    color: #93C5FD;
 
     font-size: 13px;
     font-weight: 500;
@@ -105,17 +109,23 @@ tbody tr {
 
 /* Footer */
 .preview-footer {
-    padding: 18px 24px;
-    border-top: 1px solid #e9ecef;
-
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    text-align: center;
-
-    background: #fff;
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
 }
 
+.footer-btn {
+  flex: 1;
+  height: 42px;
+}
+
+.footer-btn .btn {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 /* Animation */
 @keyframes popup {
 

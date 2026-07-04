@@ -1,21 +1,27 @@
+nav {
+  background-color: #111827 !important;
+  border-right: 1px solid #334155 !important;
+}
+
 .border-transparent {
   border-color: transparent !important;
 }
 
 a.active {
-  background: #e3f2fd !important;
-  color: #1976d2 !important;
+  background: #1D4ED8 !important;
+  color: #FFFFFF !important;
   font-weight: 600;
-  border-left-color: #1976d2 !important;
+  border-left-color: #1D4ED8 !important;
 }
 
 a.nav-link {
-  color: #333;
+  color: #E5E7EB;
   text-decoration: none;
   border-radius: 0;
   cursor: pointer;
 }
 
 a.nav-link:hover {
-  background: #e0e0e0;
+  background: #1F2937;
+  color: #FFFFFF;
 }

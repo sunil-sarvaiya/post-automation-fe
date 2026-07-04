@@ -5,10 +5,10 @@
   flex-shrink: 0;
 }
 .dot.done {
-  background: #198754;
+  background: #10B981;
 }
 .dot.active {
-  background: #0d6efd;
+  background: #3B82F6;
   animation: pulse 1.5s infinite;
 }
 @keyframes pulse {
@@ -18,8 +18,11 @@
 
 .list-group-item {
   cursor: pointer;
+  background-color: #1F2937;
+  color: #E5E7EB;
+  border-color: #334155;
 }
 .list-group-item:hover {
-  background-color: #f8f9fa;
+  background-color: #273549;
 }
 
