@@ -1,105 +1,93 @@
-import { Component } from '@angular/core';
-import { FormControl, FormGroup } from '@angular/forms';
-
-
+import { Component, OnInit } from '@angular/core';
+import { GeneratedScheduledPost, ScheduledPostService } from '../services/scheduled-post.service';
+import { PostService } from '../services/post.service';
 
 @Component({
   selector: 'app-scheduled',
   templateUrl: './scheduled.component.html',
   styleUrls: ['./scheduled.component.css']
 })
-export class ScheduledComponent {
-  scheduleForm !: FormGroup;
+export class ScheduledComponent implements OnInit {
   filteredPosts: any[] = [];
   selectedPlatform = 'All';
   selectedStatus: any = 'All';
   platformFilterOptions = ['All', 'LinkedIn', 'Facebook', 'Instagram', 'X'];
-  statusFilterOptions = ['All', 'Draft', 'Approved', 'Scheduled', 'Rejected'];
-  showDialog = false;
-  isEdit = false;
+  statusFilterOptions = ['All', 'Draft', 'Approved', 'Published', 'Failed'];
   showFilterDialog = false;
   isFilterApplied = false;
-  
+  isCreating = false;
+  isLoading = false;
+  createError: string | null = null;
+  postingId: string | null = null;
 
+  constructor(
+    private scheduledPostService: ScheduledPostService,
+    private postService: PostService
+  ) {}
 
-
-  constructor() {
-    this.scheduleForm = new FormGroup({
-      prompt: new FormControl(''), title: new FormControl(''), platform: new FormControl([]), scheduleDate: new FormControl(''), scheduleTime: new FormControl(''), caption: new FormControl(''), hashtags: new FormControl(''), image: new FormControl('https://placehold.co/700x350/png?text=AI+Generated+Image')
-    });
-    this.filteredPosts = [...this.scheduledPosts];
+  ngOnInit(): void {
+    this.loadScheduledPosts();
   }
 
   columns: any[] = [{ field: 'id', header: 'ID' }, { field: 'title', header: 'Title' }, { field: 'contentType', header: 'Content Type' }, { field: 'platform', header: 'Platform' }, { field: 'scheduledAt', header: 'Schedule Date' }, { field: 'status', header: 'Status' }
   ];
 
-  scheduledPosts: any[] = [
-    {
-      "id": 1,
-      "title": "OpenAI launches GPT-6",
-      "contentType": "Trend Commentary",
-      "platform": [
-        "LinkedIn",
-        "X",
-        "Instagram",
-        "Facebook",
-        "Threads"
-      ],
-      "scheduledAt": "05 Jul 2026 10:00 AM",
-      "status": "Approved",
-      "prompt": "Write about GPT-6",
-      "caption": "OpenAI launches GPT-6 with amazing capabilities.",
-      "hashtags": "#AI #GPT6",
-      "image": "https://placehold.co/700x350/png?text=GPT-6"
-    },
-    {
-      "id": 2,
-      "title": "Google Gemini Update",
-      "contentType": "Industry News",
-      "platform": [
-        "Facebook",
-        "Instagram"
-      ],
-      "scheduledAt": "06 Jul 2026 11:30 AM",
-      "status": "Draft",
-      "prompt": "Google Gemini Update",
-      "caption": "Latest Gemini improvements.",
-      "hashtags": "#Gemini",
-      "image": "https://placehold.co/700x350/png?text=Gemini"
-    },
-    {
-      "id": 3,
-      "title": "Top AI Tools in 2026",
-      "contentType": "Thought Leadership",
-      "platform": [
-        "Instagram"
-      ],
-      "scheduledAt": "07 Jul 2026 09:00 AM",
-      "status": "Scheduled",
-      "prompt": "Top AI Tools",
-      "caption": "These are the best AI tools.",
-      "hashtags": "#AI",
-      "image": "https://placehold.co/700x350/png?text=AI+Tools"
-    },
-    {
-      "id": 4,
-      "title": "Automation Trends",
-      "contentType": "Announcement",
-      "platform": [
-        "LinkedIn",
-        "Instagram",
-        "X",
-        "Facebook"
-      ],
-      "scheduledAt": "08 Jul 2026 02:00 PM",
-      "status": "Rejected",
-      "prompt": "Automation Trends",
-      "caption": "Future of automation.",
-      "hashtags": "#Automation",
-      "image": "https://placehold.co/700x350/png?text=Automation"
-    }
-  ]
+  scheduledPosts: any[] = [];
 
+  loadScheduledPosts() {
+    this.isLoading = true;
+    this.scheduledPostService.list().subscribe({
+      next: (docs) => {
+        this.scheduledPosts = docs.map((doc) => this.toRow(doc));
+        this.applyFilter();
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Failed to load scheduled posts', err);
+        this.isLoading = false;
+      }
+    });
+  }
+
+  createScheduledPost() {
+    this.isCreating = true;
+    this.createError = null;
+
+    this.scheduledPostService.generate({}).subscribe({
+      next: () => {
+        this.isCreating = false;
+        this.loadScheduledPosts();
+      },
+      error: (err) => {
+        console.error('Failed to generate scheduled post', err);
+        this.createError = 'Failed to generate scheduled post. Please try again.';
+        this.isCreating = false;
+      }
+    });
+  }
+
+  private toRow(doc: GeneratedScheduledPost) {
+    return {
+      id: doc._id,
+      _id: doc._id,
+      title: doc.title || doc.description?.slice(0, 60) || '',
+      contentType: doc.imagePrompt ? 'AI Generated' : 'Manual',
+      platform: doc.platform ? doc.platform.split(',').map((p) => p.trim()).filter(Boolean) : [],
+      scheduledAt: doc.scheduledAt,
+      status: doc.status,
+      caption: doc.description || '',
+      hashtags: (doc.hashtags || []).join(' '),
+      image: doc.imageUrl || 'https://placehold.co/700x350/png?text=AI+Generated+Image'
+    };
+  }
+
+  formatScheduledAt(iso: string): string {
+    const date = new Date(iso);
+    if (isNaN(date.getTime())) { return iso; }
+    const datePart = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const timePart = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    return `${datePart} ${timePart}`;
+  }
 
   getValue(row: any, field: keyof any) {
     return row[field];
@@ -109,72 +97,55 @@ export class ScheduledComponent {
     switch (status) {
       case 'Approved': return 'success';
       case 'Draft': return 'secondary';
-      case 'Scheduled': return 'warning';
-      case 'Rejected': return 'danger';
+      case 'Published': return 'primary';
+      case 'Failed': return 'danger';
       default: return 'secondary';
     }
-
   }
-  editPost(post: any) {
-    this.isEdit = true;
-    const dateTime = new Date(post.scheduledAt);
-    const scheduleDate = !isNaN(dateTime.getTime()) ? dateTime.toISOString().split('T')[0] : '';
-    const scheduleTime = !isNaN(dateTime.getTime()) ? dateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
-    this.scheduleForm.patchValue({
-      prompt: post.prompt || '',
-      title: post.title,
-      platform: Array.isArray(post.platform) ? post.platform : [post.platform],
-      scheduleDate,
-      scheduleTime,
-      caption: post.caption || '',
-      hashtags: post.hashtags || '',
-      image: post.image || 'https://placehold.co/700x350/png?text=AI+Generated+Image'
+
+  deletePost(id: string) {
+    if (!confirm('Delete this scheduled post?')) { return; }
+    this.scheduledPostService.remove(id).subscribe({
+      next: () => this.loadScheduledPosts(),
+      error: (err) => console.error('Failed to delete scheduled post', err)
     });
-    this.showDialog = true;
-
-  }
-
-  deletePost(id: number) {
-    this.scheduledPosts = this.scheduledPosts.filter(x => x.id !== id);
-    this.applyFilter();
-
   }
 
   postNow(post: any) {
-    alert('Posting to ' + post.platform);
+    const platform = Array.isArray(post.platform) && post.platform.length ? post.platform[0] : 'linkedin';
 
-  }
-
-
-
-  platformOptions = ['LinkedIn', 'Facebook', 'Instagram', 'X'
-  ];
-
-
-  openDialog() {
-    this.isEdit = false;
-    this.scheduleForm.reset();
-    this.scheduleForm.patchValue({
-      platform: 'LinkedIn', image: 'https://placehold.co/700x350/png?text=AI+Generated+Image'
+    this.postingId = post._id;
+    this.postService.createPost(post.caption, platform).subscribe({
+      next: () => {
+        this.scheduledPostService.update(post._id, { status: 'Published' }).subscribe({
+          next: () => {
+            this.postingId = null;
+            this.loadScheduledPosts();
+          },
+          error: (err) => {
+            console.error('Post succeeded but failed to update scheduled post status', err);
+            this.postingId = null;
+            this.loadScheduledPosts();
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Failed to post now', err);
+        alert('Failed to post now. Please try again.');
+        this.postingId = null;
+      }
     });
-    this.showDialog = true;
-
-  }
-
-  closeDialog() {
-    this.showDialog = false;
-
   }
 
   applyFilter() {
     this.filteredPosts = this.scheduledPosts.filter(post => {
-      const platformMatch = this.selectedPlatform === 'All' || post.platform === this.selectedPlatform;
+      const platformMatch = this.selectedPlatform === 'All' ||
+        (Array.isArray(post.platform) ? post.platform.includes(this.selectedPlatform) : post.platform === this.selectedPlatform);
       const statusMatch = this.selectedStatus === 'All' || post.status === this.selectedStatus;
       return platformMatch && statusMatch;
     });
     this.isFilterApplied = this.selectedPlatform !== 'All' || this.selectedStatus !== 'All';
     this.closeFilter();
-
   }
 
   resetFilter() {
@@ -182,7 +153,6 @@ export class ScheduledComponent {
     this.filteredPosts = [...this.scheduledPosts];
     this.isFilterApplied = false;
     this.closeFilter();
-
   }
 
   openFilter() {
@@ -192,40 +162,4 @@ export class ScheduledComponent {
   closeFilter() {
     this.showFilterDialog = false;
   }
-
-  showPlatformDropdown = false;
-
-
-  togglePlatformDropdown() {
-    this.showPlatformDropdown = !this.showPlatformDropdown;
-  }
-
-  isPlatformSelected(platform: string): boolean {
-    const values = this.scheduleForm.get('platform')?.value;
-    if (!Array.isArray(values)) { return false; }
-    return values.includes(platform);
-
-  }
-  onPlatformChange(platform: string, event: any) {
-    let values = this.scheduleForm.get('platform')?.value;
-    if (!Array.isArray(values)) { values = []; }
-    values = [...values];
-    if (event.target.checked) {
-      if (!values.includes(platform)) { values.push(platform); }
-    } else {
-      values = values.filter((x: string) => x !== platform);
-    }
-    this.scheduleForm.patchValue({ platform: values });
-
-  }
-
-  getSelectedPlatforms() {
-    const values = this.scheduleForm.get('platform')?.value;
-    if (!values) { return ''; }
-    if (Array.isArray(values)) { return values.join(', '); }
-    return values;
-
-  }
-
-
 }
