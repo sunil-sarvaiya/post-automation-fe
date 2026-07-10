@@ -8,9 +8,9 @@ import { Router } from '@angular/router';
 })
 export class SidebarComponent {
   tabs = [
-    { label: 'Dashboard', route: '/home/dashboard' },
-    { label: 'Posted', route: '/home/posted' },
-    { label: 'Scheduled Posts', route: '/home/scheduled' }
+    { label: 'Dashboard', route: '/home/dashboard', icon: 'bi-grid-fill' },
+    { label: 'Posted', route: '/home/posted', icon: 'bi-check-circle-fill' },
+    { label: 'Scheduled Posts', route: '/home/scheduled', icon: 'bi-calendar-event-fill' }
   ];
 
   constructor(private router: Router) {}

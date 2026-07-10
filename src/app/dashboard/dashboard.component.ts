@@ -1,4 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { PostService } from '../services/post.service';
+import { ScheduledPostService } from '../services/scheduled-post.service';
 
 interface StatsCard {
   label: string;
@@ -8,58 +10,71 @@ interface StatsCard {
   icon: string;
 }
 
-interface ReviewItem {
-  id: number;
-  source: string;
-  headline: string;
-  relevanceScore: number;
-  contentType: string;
-  urgency: 'high' | 'normal' | 'low';
-  receivedAt: string;
-}
-
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
   stats: StatsCard[] = [
-    { label: 'Total Posted', value: '147', change: '+12 this week', trend: 'up', icon: 'bi-check-circle' },
-    { label: 'Pending Review', value: '8', change: '3 high priority', trend: 'up', icon: 'bi-clock' },
-    { label: 'Scheduled', value: '23', change: 'Next: Today 3pm', trend: 'up', icon: 'bi-calendar' },
+    { label: 'Total Posted', value: '...', change: 'Loading...', trend: 'up', icon: 'bi-check-circle' },
+    { label: 'Pending Review', value: '...', change: 'Loading...', trend: 'up', icon: 'bi-clock' },
+    { label: 'Scheduled', value: '...', change: 'Loading...', trend: 'up', icon: 'bi-calendar' },
   ];
 
-  reviewQueue: ReviewItem[] = [
-    { id: 1, source: 'TechCrunch', headline: 'OpenAI launches GPT-5 with reasoning capabilities', relevanceScore: 94, contentType: 'Trend Commentary', urgency: 'high', receivedAt: '10 min ago' },
-    { id: 2, source: 'Industry News', headline: 'New data privacy regulations take effect in EU', relevanceScore: 87, contentType: 'Thought Leadership', urgency: 'high', receivedAt: '25 min ago' },
-    { id: 3, source: 'Competitor Alert', headline: 'Competitor X announces AI-powered analytics suite', relevanceScore: 82, contentType: 'Positioning', urgency: 'high', receivedAt: '1 hour ago' },
-    { id: 4, source: 'Google Trends', headline: '"Automation tools" search volume spikes 240%', relevanceScore: 79, contentType: 'Trend Commentary', urgency: 'normal', receivedAt: '2 hours ago' },
-    { id: 5, source: 'Company Feed', headline: 'New integration with Salesforce announced', relevanceScore: 96, contentType: 'Announcement', urgency: 'normal', receivedAt: '3 hours ago' }
-  ];
+  constructor(
+    private postService: PostService,
+    private scheduledPostService: ScheduledPostService
+  ) {}
 
-  recentPipeline = [
-    { action: 'Scraped 47 new items', time: '5 min ago', status: 'done' },
-    { action: 'Normalized & deduped → 32 items', time: '4 min ago', status: 'done' },
-    { action: 'Content Strategy scored → 8 passed threshold', time: '3 min ago', status: 'done' },
-    { action: 'Generated 5 drafts for review', time: '2 min ago', status: 'done' },
-    { action: 'Published "AI in Enterprise" to LinkedIn', time: '15 min ago', status: 'done' },
-    { action: 'Scheduling 3 posts for optimal times', time: 'just now', status: 'active' }
-  ];
-
-  getScoreClass(score: number): string {
-    if (score >= 90) return 'success';
-    if (score >= 80) return 'primary';
-    if (score >= 70) return 'warning';
-    return 'danger';
+  ngOnInit(): void {
+    this.loadStats();
   }
 
-  getUrgencyBadge(urgency: string): string {
-    switch (urgency) {
-      case 'high': return 'danger';
-      case 'normal': return 'primary';
-      case 'low': return 'secondary';
-      default: return 'secondary';
-    }
+  private loadStats(): void {
+    this.loadTotalPosted();
+    this.loadScheduledStats();
+  }
+
+  private loadTotalPosted(): void {
+    this.postService.getPosts(1, 1).subscribe({
+      next: (res) => {
+        this.stats[0].value = res.total.toString();
+        this.stats[0].change = `${res.total} published`;
+        this.stats[0].trend = 'up';
+      },
+      error: () => {
+        this.stats[0].value = '—';
+        this.stats[0].change = 'Failed to load';
+        this.stats[0].trend = 'down';
+      }
+    });
+  }
+
+  private loadScheduledStats(): void {
+    this.scheduledPostService.list(1, 100).subscribe({
+      next: (res) => {
+        const posts = res.posts;
+        const pending = posts.filter(p => p.status === 'Draft' || p.status === 'Approved').length;
+        const scheduled = posts.filter(p => p.status === 'Approved').length;
+        const totalScheduled = res.total;
+
+        this.stats[1].value = pending.toString();
+        this.stats[1].change = `${scheduled} ready to publish`;
+        this.stats[1].trend = pending > 0 ? 'up' : 'down';
+
+        this.stats[2].value = totalScheduled.toString();
+        this.stats[2].change = `${posts.filter(p => p.status === 'Published').length} published`;
+        this.stats[2].trend = totalScheduled > 0 ? 'up' : 'down';
+      },
+      error: () => {
+        this.stats[1].value = '—';
+        this.stats[1].change = 'Failed to load';
+        this.stats[1].trend = 'down';
+        this.stats[2].value = '—';
+        this.stats[2].change = 'Failed to load';
+        this.stats[2].trend = 'down';
+      }
+    });
   }
 }

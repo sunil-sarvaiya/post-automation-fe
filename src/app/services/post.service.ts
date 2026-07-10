@@ -38,7 +38,7 @@ export class PostService {
     return this.http.get<PostsResponse>(this.baseUrl, { params });
   }
 
-  createPost(description: string, platform?: string): Observable<Post> {
-    return this.http.post<Post>(this.baseUrl, { description, platform });
+  createPost(description: string, platform?: string, imageUrl?: string): Observable<Post> {
+    return this.http.post<Post>(this.baseUrl, { description, platform, imageUrl });
   }
 }

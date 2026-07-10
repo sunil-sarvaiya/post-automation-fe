@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { GeneratedScheduledPost, ScheduledPostService } from '../services/scheduled-post.service';
 import { PostService } from '../services/post.service';
 
@@ -8,10 +9,7 @@ import { PostService } from '../services/post.service';
   styleUrls: ['./scheduled.component.css']
 })
 export class ScheduledComponent implements OnInit {
-  filteredPosts: any[] = [];
-  selectedPlatform = 'All';
   selectedStatus: any = 'All';
-  platformFilterOptions = ['All', 'LinkedIn', 'Facebook', 'Instagram', 'X'];
   statusFilterOptions = ['All', 'Draft', 'Approved', 'Published', 'Failed'];
   showFilterDialog = false;
   isFilterApplied = false;
@@ -19,27 +17,42 @@ export class ScheduledComponent implements OnInit {
   isLoading = false;
   createError: string | null = null;
   postingId: string | null = null;
+  showDetailDialog = false;
+  selectedPost: any = null;
+
+  total = 0;
+  page = 1;
+  limit = 5;
+  totalPages = 0;
 
   constructor(
     private scheduledPostService: ScheduledPostService,
-    private postService: PostService
+    private postService: PostService,
+    private sanitizer: DomSanitizer
   ) {}
 
   ngOnInit(): void {
     this.loadScheduledPosts();
   }
 
-  columns: any[] = [{ field: 'id', header: 'ID' }, { field: 'title', header: 'Title' }, { field: 'contentType', header: 'Content Type' }, { field: 'platform', header: 'Platform' }, { field: 'scheduledAt', header: 'Schedule Date' }, { field: 'status', header: 'Status' }
+  columns: any[] = [
+    { field: 'title', header: 'Title' },
+    { field: 'caption', header: 'Caption' },
+    { field: 'scheduledAt', header: 'Schedule Date' },
+    { field: 'publishedAt', header: 'Published At' },
+    { field: 'status', header: 'Status' }
   ];
 
   scheduledPosts: any[] = [];
 
   loadScheduledPosts() {
     this.isLoading = true;
-    this.scheduledPostService.list().subscribe({
-      next: (docs) => {
-        this.scheduledPosts = docs.map((doc) => this.toRow(doc));
-        this.applyFilter();
+    const status = this.isFilterApplied && this.selectedStatus !== 'All' ? this.selectedStatus : undefined;
+    this.scheduledPostService.list(this.page, this.limit, status).subscribe({
+      next: (res) => {
+        this.scheduledPosts = res.posts.map((doc) => this.toRow(doc));
+        this.total = res.total;
+        this.totalPages = res.totalPages;
         this.isLoading = false;
       },
       error: (err) => {
@@ -49,6 +62,18 @@ export class ScheduledComponent implements OnInit {
     });
   }
 
+  get pageNumbers(): number[] {
+    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+  }
+
+  goToPage(p: number): void {
+    if (p < 1 || p > this.totalPages || p === this.page) {
+      return;
+    }
+    this.page = p;
+    this.loadScheduledPosts();
+  }
+
   createScheduledPost() {
     this.isCreating = true;
     this.createError = null;
@@ -56,6 +81,7 @@ export class ScheduledComponent implements OnInit {
     this.scheduledPostService.generate({}).subscribe({
       next: () => {
         this.isCreating = false;
+        this.page = 1;
         this.loadScheduledPosts();
       },
       error: (err) => {
@@ -68,16 +94,23 @@ export class ScheduledComponent implements OnInit {
 
   private toRow(doc: GeneratedScheduledPost) {
     return {
-      id: doc._id,
       _id: doc._id,
       title: doc.title || doc.description?.slice(0, 60) || '',
-      contentType: doc.imagePrompt ? 'AI Generated' : 'Manual',
-      platform: doc.platform ? doc.platform.split(',').map((p) => p.trim()).filter(Boolean) : [],
       scheduledAt: doc.scheduledAt,
       status: doc.status,
-      caption: doc.description || '',
-      hashtags: (doc.hashtags || []).join(' '),
-      image: doc.imageUrl || 'https://placehold.co/700x350/png?text=AI+Generated+Image'
+      caption: (doc.description || '').slice(0, 120) + ((doc.description || '').length > 120 ? '...' : ''),
+      image: doc.imageUrl || '',
+      description: doc.description || '',
+      hashtags: doc.hashtags || [],
+      imagePrompt: doc.imagePrompt,
+      platform: doc.platform || '',
+      generatedAt: doc.generatedAt,
+      publishedAt: doc.publishedAt,
+      postUrl: doc.postUrl,
+      postId: doc.postId,
+      retryCount: doc.retryCount,
+      errorMessage: doc.errorMessage,
+      isPublishing: doc.isPublishing
     };
   }
 
@@ -111,13 +144,30 @@ export class ScheduledComponent implements OnInit {
     });
   }
 
-  postNow(post: any) {
-    const platform = Array.isArray(post.platform) && post.platform.length ? post.platform[0] : 'linkedin';
+  openDetail(row: any) {
+    this.selectedPost = row;
+    this.showDetailDialog = true;
+  }
 
+  closeDetail() {
+    this.showDetailDialog = false;
+    this.selectedPost = null;
+  }
+
+  sanitizeImageUrl(url: string): SafeUrl {
+    return this.sanitizer.bypassSecurityTrustUrl(url);
+  }
+
+  postNow(post: any) {
     this.postingId = post._id;
-    this.postService.createPost(post.caption, platform).subscribe({
-      next: () => {
-        this.scheduledPostService.update(post._id, { status: 'Published' }).subscribe({
+    this.postService.createPost(post.caption || post.title, 'linkedin', post.image || undefined).subscribe({
+      next: (res) => {
+        this.scheduledPostService.update(post._id, {
+          status: 'Published',
+          publishedAt: res.postedAt || new Date().toISOString(),
+          postId: res.postId,
+          postUrl: res.postUrl
+        }).subscribe({
           next: () => {
             this.postingId = null;
             this.loadScheduledPosts();
@@ -138,20 +188,17 @@ export class ScheduledComponent implements OnInit {
   }
 
   applyFilter() {
-    this.filteredPosts = this.scheduledPosts.filter(post => {
-      const platformMatch = this.selectedPlatform === 'All' ||
-        (Array.isArray(post.platform) ? post.platform.includes(this.selectedPlatform) : post.platform === this.selectedPlatform);
-      const statusMatch = this.selectedStatus === 'All' || post.status === this.selectedStatus;
-      return platformMatch && statusMatch;
-    });
-    this.isFilterApplied = this.selectedPlatform !== 'All' || this.selectedStatus !== 'All';
+    this.page = 1;
+    this.isFilterApplied = this.selectedStatus !== 'All';
+    this.loadScheduledPosts();
     this.closeFilter();
   }
 
   resetFilter() {
-    this.selectedPlatform = 'All'; this.selectedStatus = 'All';
-    this.filteredPosts = [...this.scheduledPosts];
+    this.selectedStatus = 'All';
     this.isFilterApplied = false;
+    this.page = 1;
+    this.loadScheduledPosts();
     this.closeFilter();
   }
 

@@ -1,73 +1,55 @@
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.dot.done {
-  background: #10B981;
-}
-.dot.active {
-  background: #3B82F6;
-  animation: pulse 1.5s infinite;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-.list-group-item {
-  cursor: pointer;
-  background-color: #1F2937;
-  color: #E5E7EB;
-  border-color: #334155;
-}
-.list-group-item:hover {
-  background-color: #273549;
-}
-
-.navbar {
-  background-color: #1E293B !important;
-  border-bottom: 1px solid #334155;
-}
-
-.navbar-brand {
-  color: #FFFFFF !important;
-}
-main {
-  background-color: #0F172A;
-}
 :host {
   display: block;
   height: 100vh;
   overflow: hidden;
 }
 
-/* Header height = 56px */
 .layout {
   display: flex;
   height: calc(100vh - 56px);
   margin-top: 56px;
 }
 
-/* Sidebar */
 app-sidebar {
   position: fixed;
   top: 56px;
   left: 0;
-  width: 260px;      /* Use your sidebar width */
+  width: 220px;
   height: calc(100vh - 56px);
-  overflow: hidden;  /* Sidebar won't scroll */
-  background: #111827;
+  overflow: hidden;
+  background: #0f1923;
+  z-index: 100;
+  transition: transform 0.3s ease;
 }
 
-/* Router Content */
 .content {
-  margin-left: 260px; /* Same as sidebar width */
-  width: calc(100% - 260px);
+  margin-left: 220px;
+  width: calc(100% - 220px);
   height: calc(100vh - 56px);
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 24px;
-  background: #0F172A;
+  padding: 28px;
+  background: #0a0e1a;
+}
+
+/* Responsive: collapse sidebar on small screens */
+@media (max-width: 768px) {
+  app-sidebar {
+    transform: translateX(-100%);
+  }
+  .content {
+    margin-left: 0;
+    width: 100%;
+    padding: 20px 16px;
+  }
+}
+
+/* Subtle entrance animation for content */
+.content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

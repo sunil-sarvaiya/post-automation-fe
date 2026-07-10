@@ -1,9 +1,9 @@
 <div class="container-fluid">
-  <div class="d-flex justify-content-between align-items-center mb-3">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
     <div>
-      <h3>Scheduled Posts</h3>
+      <h4 class="fw-bold mb-1" style="color: #e2e8f0;">Scheduled Posts</h4>
       <small class="text-muted">
-        {{scheduledPosts.length}} Scheduled Posts
+        {{ total }} scheduled posts
       </small>
     </div>
     <div class="d-flex align-items-center gap-2">
@@ -33,47 +33,26 @@
             <th width="170">
               Actions
             </th>
+            <th width="80">
+              Link
+            </th>
           </tr>
         </thead>
         <tbody>
           <tr *ngIf="isLoading">
-            <td [attr.colspan]="columns.length + 1" class="text-center text-muted py-3">Loading...</td>
+            <td [attr.colspan]="columns.length + 2" class="text-center text-muted py-4">
+              <div class="d-flex align-items-center justify-content-center gap-2">
+                <span class="spinner-border spinner-border-sm"></span>
+                Loading...
+              </div>
+            </td>
           </tr>
-          <tr *ngIf="!isLoading && filteredPosts.length === 0">
-            <td [attr.colspan]="columns.length + 1" class="text-center text-muted py-3">No scheduled posts yet.</td>
+          <tr *ngIf="!isLoading && scheduledPosts.length === 0">
+            <td [attr.colspan]="columns.length + 2" class="text-center text-muted py-4">No scheduled posts yet.</td>
           </tr>
-          <tr *ngFor="let row of filteredPosts">
+          <tr *ngFor="let row of scheduledPosts">
             <td *ngFor="let col of columns">
               <ng-container [ngSwitch]="col.field">
-                <div *ngSwitchCase="'platform'" class="platform-chips">
-
-                  <span class="badge bg-dark chip" *ngFor="let p of row.platform | slice:0:2">
-
-                    {{ p }}
-
-                  </span>
-
-                  <div class="more-chip-wrapper" *ngIf="row.platform.length > 2">
-
-                    <span class="badge bg-secondary more-chip">
-
-                      +{{ row.platform.length - 2 }}
-
-                    </span>
-
-                    <div class="chip-tooltip">
-
-                      <span class="badge bg-dark chip" *ngFor="let p of row.platform | slice:2">
-
-                        {{ p }}
-
-                      </span>
-
-                    </div>
-
-                  </div>
-
-                </div>
                 <span *ngSwitchCase="'status'" class="badge"
                   [ngClass]="'bg-'+getStatusClass(getValue(row,col.field).toString())">
                   {{getValue(row,col.field)}}
@@ -81,13 +60,19 @@
                 <span *ngSwitchCase="'scheduledAt'">
                   {{ formatScheduledAt(getValue(row,col.field)) }}
                 </span>
+                <span *ngSwitchCase="'publishedAt'">
+                  {{ getValue(row,col.field) ? formatScheduledAt(getValue(row,col.field)) : '—' }}
+                </span>
                 <span *ngSwitchDefault>
                   {{getValue(row,col.field)}}
                 </span>
               </ng-container>
             </td>
             <td>
-              <button class="btn btn-sm btn-outline-success me-2" [disabled]="postingId === row._id"
+              <button class="btn btn-sm btn-outline-info me-1" (click)="openDetail(row)" title="View Details">
+                <i class="bi bi-info-circle"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-success me-1" [disabled]="postingId === row._id"
                 (click)="postNow(row)" title="Post Now">
                 <i class="bi" [ngClass]="postingId === row._id ? 'bi-hourglass-split' : 'bi-send-fill'"></i>
               </button>
@@ -95,9 +80,35 @@
                 <i class="bi bi-trash"></i>
               </button>
             </td>
+            <td>
+              <a *ngIf="row.postUrl" [href]="row.postUrl" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary" title="Open Post">
+                <i class="bi bi-box-arrow-up-right"></i>
+              </a>
+              <span *ngIf="!row.postUrl" class="text-muted">—</span>
+            </td>
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="card-footer" *ngIf="totalPages > 1">
+      <nav aria-label="Scheduled posts pagination">
+        <ul class="pagination justify-content-center mb-0">
+          <li class="page-item" [class.disabled]="page === 1">
+            <a class="page-link" href="javascript:void(0)" (click)="goToPage(page - 1)">
+              <i class="bi bi-chevron-left"></i> Previous
+            </a>
+          </li>
+          <li class="page-item" *ngFor="let p of pageNumbers" [class.active]="p === page">
+            <a class="page-link" href="javascript:void(0)" (click)="goToPage(p)">{{ p }}</a>
+          </li>
+          <li class="page-item" [class.disabled]="page === totalPages">
+            <a class="page-link" href="javascript:void(0)" (click)="goToPage(page + 1)">
+              Next <i class="bi bi-chevron-right"></i>
+            </a>
+          </li>
+        </ul>
+      </nav>
     </div>
   </div>
 </div>
@@ -114,16 +125,6 @@
     </div>
     <!-- Body -->
     <div class="dialog-body filter-body">
-      <div class="mb-4 w-100">
-        <label class="form-label fw-semibold mb-2">
-          Platform
-        </label>
-        <select class="form-select" [(ngModel)]="selectedPlatform">
-          <option *ngFor="let item of platformFilterOptions" [value]="item">
-            {{ item }}
-          </option>
-        </select>
-      </div>
       <div class="mb-4 w-100">
         <label class="form-label fw-semibold mb-2">
           Status
@@ -145,6 +146,90 @@
       <button class="btn btn-primary" (click)="applyFilter()">
         Apply Filter
       </button>
+    </div>
+  </div>
+</div>
+
+<div class="dialog-overlay" *ngIf="showDetailDialog">
+  <div class="dialog-container detail-dialog">
+    <div class="dialog-header">
+      <h4>
+        <i class="bi bi-info-circle me-2"></i>
+        Post Details
+      </h4>
+      <button class="btn-close" (click)="closeDetail()"></button>
+    </div>
+    <div class="dialog-body">
+      <div class="left-panel">
+        <img *ngIf="selectedPost?.image" [src]="sanitizeImageUrl(selectedPost.image)" class="preview-image" alt="Post image" />
+        <div *ngIf="!selectedPost?.image" class="preview-image placeholder-img d-flex align-items-center justify-content-center text-muted">
+          No Image
+        </div>
+        <div class="preview-card">
+          <h5>Description</h5>
+          <p>{{ selectedPost?.description || 'No description' }}</p>
+        </div>
+        <div *ngIf="selectedPost?.hashtags?.length" class="preview-card">
+          <h5>Hashtags</h5>
+          <div>
+            <span class="tag" *ngFor="let tag of selectedPost?.hashtags">#{{ tag }}</span>
+          </div>
+        </div>
+        <div *ngIf="selectedPost?.imagePrompt" class="preview-card">
+          <h5>Image Prompt</h5>
+          <p>{{ selectedPost?.imagePrompt }}</p>
+        </div>
+      </div>
+      <div class="right-panel">
+        <div class="detail-field">
+          <label class="form-label">Title</label>
+          <p>{{ selectedPost?.title || '—' }}</p>
+        </div>
+        <div class="detail-field">
+          <label class="form-label">Platform</label>
+          <p><span class="badge bg-secondary">{{ selectedPost?.platform }}</span></p>
+        </div>
+        <div class="detail-field">
+          <label class="form-label">Status</label>
+          <p><span class="badge" [ngClass]="'bg-'+getStatusClass(selectedPost?.status)">{{ selectedPost?.status }}</span></p>
+        </div>
+        <div class="detail-field">
+          <label class="form-label">Scheduled At</label>
+          <p>{{ formatScheduledAt(selectedPost?.scheduledAt) }}</p>
+        </div>
+        <div class="detail-field">
+          <label class="form-label">Generated At</label>
+          <p>{{ selectedPost?.generatedAt ? formatScheduledAt(selectedPost?.generatedAt) : '—' }}</p>
+        </div>
+        <div class="detail-field">
+          <label class="form-label">Published At</label>
+          <p>{{ selectedPost?.publishedAt ? formatScheduledAt(selectedPost?.publishedAt) : '—' }}</p>
+        </div>
+        <div class="detail-field">
+          <label class="form-label">Post URL</label>
+          <p>
+            <a *ngIf="selectedPost?.postUrl" [href]="selectedPost?.postUrl" target="_blank" rel="noopener noreferrer">
+              {{ selectedPost?.postUrl }}
+            </a>
+            <span *ngIf="!selectedPost?.postUrl">—</span>
+          </p>
+        </div>
+        <div class="detail-field">
+          <label class="form-label">Post ID</label>
+          <p>{{ selectedPost?.postId || '—' }}</p>
+        </div>
+        <div class="detail-field">
+          <label class="form-label">Retry Count</label>
+          <p>{{ selectedPost?.retryCount ?? 0 }}</p>
+        </div>
+        <div class="detail-field" *ngIf="selectedPost?.errorMessage">
+          <label class="form-label text-danger">Error</label>
+          <p class="text-danger">{{ selectedPost?.errorMessage }}</p>
+        </div>
+        <div class="detail-footer">
+          <button class="btn btn-secondary" (click)="closeDetail()">Close</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>

@@ -1,8 +1,9 @@
-<nav class="d-flex flex-column bg-light border-end vh-100 p-0" style="width: 220px;">
+<nav class="d-flex flex-column vh-100 p-0" style="width: 220px;">
   <a *ngFor="let tab of tabs"
-     class="nav-link px-3 py-3 border-start border-3 border-transparent"
+     class="nav-link"
      [class.active]="isActive(tab.route)"
      (click)="navigate(tab.route)">
+    <i class="bi {{ tab.icon }}"></i>
     {{ tab.label }}
   </a>
 </nav>

@@ -1,8 +1,22 @@
 .navbar {
-  background-color: #1E293B !important;
-  border-bottom: 1px solid #334155;
+  background: linear-gradient(135deg, #0f1923 0%, #1a2332 100%) !important;
+  border-bottom: 1px solid #1e293b;
+  height: 56px;
+  padding: 0 24px;
+  box-shadow: 0 1px 0 rgba(37, 99, 235, 0.1);
 }
 
 .navbar-brand {
-  color: #FFFFFF !important;
+  color: #e2e8f0 !important;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.3px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navbar-brand i {
+  color: #3b82f6;
+  font-size: 22px;
 }
