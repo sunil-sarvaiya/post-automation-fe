@@ -15,7 +15,11 @@
       </button>
       <button class="btn btn-primary" [disabled]="isCreating" (click)="createScheduledPost()">
         <i class="bi bi-plus-circle me-2"></i>
-        {{ isCreating ? 'Generating...' : 'Manual Schedule New Post' }}
+        {{ isCreating ? 'Generating...' : 'Manual Schedule' }}
+      </button>
+      <button class="btn btn-primary" (click)="openManualPostDialog()">
+        <i class="bi bi-send me-2"></i>
+        Manual Post
       </button>
     </div>
   </div>
@@ -300,6 +304,45 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Manual Post Dialog -->
+<div class="dialog-overlay" *ngIf="showManualPostDialog">
+  <div class="dialog-container manual-post-dialog">
+    <div class="dialog-header">
+      <h4>
+        <i class="bi bi-send me-2"></i>
+        Manual Post
+      </h4>
+      <button class="btn-close" (click)="closeManualPostDialog()"></button>
+    </div>
+    <div class="manual-post-body">
+      <div *ngIf="manualPostError" class="alert alert-danger py-2 mb-0">{{ manualPostError }}</div>
+      <div class="manual-post-field">
+        <label>Title</label>
+        <input type="text" class="form-control" [(ngModel)]="manualPostForm.title" placeholder="Enter post title" />
+      </div>
+      <div class="manual-post-field">
+        <label>Description</label>
+        <textarea class="form-control" rows="4" [(ngModel)]="manualPostForm.description" placeholder="Write your post description here..."></textarea>
+      </div>
+      <div class="manual-post-field">
+        <label>URL</label>
+        <input type="text" class="form-control" [(ngModel)]="manualPostForm.url" placeholder="https://example.com/article" />
+      </div>
+      <div class="manual-post-field">
+        <label>Source</label>
+        <input type="text" class="form-control" [(ngModel)]="manualPostForm.source" placeholder="e.g. blog, news, product page" />
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <button class="btn btn-secondary" (click)="closeManualPostDialog()">Cancel</button>
+      <button class="btn btn-primary" [disabled]="isManualPosting" (click)="submitManualPost()">
+        <i class="bi" [ngClass]="isManualPosting ? 'bi-hourglass-split' : 'bi-send-fill'"></i>
+        {{ isManualPosting ? 'Posting...' : 'Post Now' }}
+      </button>
     </div>
   </div>
 </div>

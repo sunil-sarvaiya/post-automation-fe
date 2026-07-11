@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { GeneratedScheduledPost, ScheduledPostService } from '../services/scheduled-post.service';
+import { GeneratedScheduledPost, ScheduledPostService, ManualPostRequest } from '../services/scheduled-post.service';
 import { PostService } from '../services/post.service';
 
 @Component({
@@ -23,6 +23,11 @@ export class ScheduledComponent implements OnInit {
   approvePost: any = null;
   approveDateTime: string = '';
   isApproving = false;
+
+  showManualPostDialog = false;
+  isManualPosting = false;
+  manualPostError: string | null = null;
+  manualPostForm: ManualPostRequest = { title: '', description: '', url: '', source: '' };
 
   total = 0;
   page = 1;
@@ -252,6 +257,33 @@ export class ScheduledComponent implements OnInit {
       error: (err) => {
         console.error('Failed to approve scheduled post', err);
         this.isApproving = false;
+      }
+    });
+  }
+
+  openManualPostDialog() {
+    this.manualPostForm = { title: '', description: '', url: '', source: '' };
+    this.manualPostError = null;
+    this.showManualPostDialog = true;
+  }
+
+  closeManualPostDialog() {
+    this.showManualPostDialog = false;
+    this.manualPostError = null;
+  }
+
+  submitManualPost() {
+    this.isManualPosting = true;
+    this.manualPostError = null;
+    this.scheduledPostService.manualPost(this.manualPostForm).subscribe({
+      next: () => {
+        this.isManualPosting = false;
+        this.closeManualPostDialog();
+      },
+      error: (err) => {
+        console.error('Manual post failed', err);
+        this.manualPostError = 'Failed to post. Please try again.';
+        this.isManualPosting = false;
       }
     });
   }

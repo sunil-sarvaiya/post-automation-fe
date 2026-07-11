@@ -52,9 +52,16 @@ export interface UpdateScheduledPostRequest {
   approvedAt?: string;
 }
 
+export interface ManualPostRequest {
+  title: string;
+  description: string;
+  url: string;
+  source: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ScheduledPostService {
-  private baseUrl = 'http://localhost:3000/api/scheduled-post';
+  private baseUrl = 'http://localhost:3000/api';
 
   constructor(private http: HttpClient) {}
 
@@ -67,18 +74,22 @@ export class ScheduledPostService {
       params = params.set('status', status);
     }
 
-    return this.http.get<ScheduledPostsResponse>(this.baseUrl, { params });
+    return this.http.get<ScheduledPostsResponse>(`${this.baseUrl}/scheduled-post`, { params });
   }
 
   generate(payload: GenerateScheduledPostRequest = {}): Observable<GeneratedScheduledPost> {
-    return this.http.post<GeneratedScheduledPost>(this.baseUrl, payload);
+    return this.http.post<GeneratedScheduledPost>(`${this.baseUrl}/scheduled-post`, payload);
   }
 
   update(id: string, payload: UpdateScheduledPostRequest): Observable<GeneratedScheduledPost> {
-    return this.http.patch<GeneratedScheduledPost>(`${this.baseUrl}/${id}`, payload);
+    return this.http.patch<GeneratedScheduledPost>(`${this.baseUrl}/scheduled-post/${id}`, payload);
   }
 
   remove(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+    return this.http.delete<void>(`${this.baseUrl}/scheduled-post/${id}`);
+  }
+
+  manualPost(payload: ManualPostRequest): Observable<any> {
+    return this.http.post(`${this.baseUrl}/manual-post`, payload);
   }
 }

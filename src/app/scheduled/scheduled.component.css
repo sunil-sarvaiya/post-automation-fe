@@ -236,6 +236,57 @@
   height: 42px;
 }
 
+/* Manual Post dialog */
+.manual-post-dialog {
+  width: 520px;
+}
+
+.manual-post-body {
+  display: flex;
+  flex-direction: column;
+  padding: 25px;
+  gap: 20px;
+}
+
+.manual-post-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.manual-post-field label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.manual-post-field .form-control {
+  background: #1a2332;
+  border: 1px solid #2d3a4a;
+  color: #e2e8f0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.manual-post-field .form-control:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  outline: none;
+}
+
+.manual-post-field .form-control::placeholder {
+  color: #475569;
+}
+
+.manual-post-field textarea.form-control {
+  resize: vertical;
+  min-height: 100px;
+}
+
 .dialog-footer {
   display: flex;
   justify-content: center;
