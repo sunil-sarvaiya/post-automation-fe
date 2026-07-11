@@ -279,9 +279,10 @@ export class ScheduledComponent implements OnInit {
       next: () => {
         this.isManualPosting = false;
         this.closeManualPostDialog();
+        this.loadScheduledPosts();
       },
       error: (err) => {
-        console.error('Manual post failed', err);
+        console.error('Manual schedule post failed', err);
         this.manualPostError = 'Failed to post. Please try again.';
         this.isManualPosting = false;
       }
