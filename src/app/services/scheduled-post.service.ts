@@ -20,6 +20,7 @@ export interface GeneratedScheduledPost {
   publishedAt: string | null;
   retryCount: number;
   errorMessage: string | null;
+  approvedAt: string | null;
 }
 
 export interface ScheduledPostsResponse {
@@ -48,6 +49,7 @@ export interface UpdateScheduledPostRequest {
   publishedAt?: string;
   postId?: string | null;
   postUrl?: string | null;
+  approvedAt?: string;
 }
 
 @Injectable({ providedIn: 'root' })

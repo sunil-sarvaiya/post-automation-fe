@@ -15,7 +15,7 @@
       </button>
       <button class="btn btn-primary" [disabled]="isCreating" (click)="createScheduledPost()">
         <i class="bi bi-plus-circle me-2"></i>
-        {{ isCreating ? 'Generating...' : 'Schedule New' }}
+        {{ isCreating ? 'Generating...' : 'Manual Schedule New Post' }}
       </button>
     </div>
   </div>
@@ -30,17 +30,14 @@
             <th *ngFor="let col of columns">
               {{col.header}}
             </th>
-            <th width="170">
+            <th width="230">
               Actions
-            </th>
-            <th width="80">
-              Link
             </th>
           </tr>
         </thead>
         <tbody>
           <tr *ngIf="isLoading">
-            <td [attr.colspan]="columns.length + 2" class="text-center text-muted py-4">
+            <td [attr.colspan]="columns.length + 1" class="text-center text-muted py-4">
               <div class="d-flex align-items-center justify-content-center gap-2">
                 <span class="spinner-border spinner-border-sm"></span>
                 Loading...
@@ -48,7 +45,7 @@
             </td>
           </tr>
           <tr *ngIf="!isLoading && scheduledPosts.length === 0">
-            <td [attr.colspan]="columns.length + 2" class="text-center text-muted py-4">No scheduled posts yet.</td>
+            <td [attr.colspan]="columns.length + 1" class="text-center text-muted py-4">No scheduled posts yet.</td>
           </tr>
           <tr *ngFor="let row of scheduledPosts">
             <td *ngFor="let col of columns">
@@ -60,6 +57,9 @@
                 <span *ngSwitchCase="'scheduledAt'">
                   {{ formatScheduledAt(getValue(row,col.field)) }}
                 </span>
+                <span *ngSwitchCase="'approvedAt'">
+                  {{ getValue(row,col.field) ? formatScheduledAt(getValue(row,col.field)) : '—' }}
+                </span>
                 <span *ngSwitchCase="'publishedAt'">
                   {{ getValue(row,col.field) ? formatScheduledAt(getValue(row,col.field)) : '—' }}
                 </span>
@@ -68,23 +68,25 @@
                 </span>
               </ng-container>
             </td>
-            <td>
-              <button class="btn btn-sm btn-outline-info me-1" (click)="openDetail(row)" title="View Details">
-                <i class="bi bi-info-circle"></i>
-              </button>
-              <button class="btn btn-sm btn-outline-success me-1" [disabled]="postingId === row._id"
-                (click)="postNow(row)" title="Post Now">
-                <i class="bi" [ngClass]="postingId === row._id ? 'bi-hourglass-split' : 'bi-send-fill'"></i>
-              </button>
-              <button class="btn btn-sm btn-outline-danger" (click)="deletePost(row._id)" title="Delete">
-                <i class="bi bi-trash"></i>
-              </button>
-            </td>
-            <td>
-              <a *ngIf="row.postUrl" [href]="row.postUrl" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary" title="Open Post">
-                <i class="bi bi-box-arrow-up-right"></i>
-              </a>
-              <span *ngIf="!row.postUrl" class="text-muted">—</span>
+            <td class="actions-cell">
+              <div class="d-flex align-items-center flex-nowrap gap-1">
+                <button class="btn btn-sm btn-outline-info" (click)="openDetail(row)" title="View Details">
+                  <i class="bi bi-info-circle"></i>
+                </button>
+                <button *ngIf="row.status === 'Draft'" class="btn btn-sm btn-outline-warning" (click)="openApprove(row)" title="Approve this post">
+                  <i class="bi bi-check-lg me-1"></i>Approve
+                </button>
+                <button *ngIf="row.status !== 'Published'" class="btn btn-sm btn-outline-success" [disabled]="postingId === row._id"
+                  (click)="postNow(row)" title="Post Now">
+                  <i class="bi me-1" [ngClass]="postingId === row._id ? 'bi-hourglass-split' : 'bi-send-fill'"></i>Post Now
+                </button>
+                <a *ngIf="row.postUrl" [href]="row.postUrl" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary" title="Open Post">
+                  <i class="bi bi-box-arrow-up-right"></i>
+                </a>
+                <button class="btn btn-sm btn-outline-danger" (click)="deletePost(row._id)" title="Delete">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -228,6 +230,74 @@
         </div>
         <div class="detail-footer">
           <button class="btn btn-secondary" (click)="closeDetail()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Approve Dialog -->
+<div class="dialog-overlay" *ngIf="showApproveDialog">
+  <div class="dialog-container approve-dialog">
+    <div class="dialog-header">
+      <h4>
+        <i class="bi bi-check-circle me-2" style="color: #f59e0b;"></i>
+        Approve Post
+      </h4>
+      <button class="btn-close" (click)="closeApprove()"></button>
+    </div>
+    <div class="dialog-body">
+      <div class="left-panel">
+        <img *ngIf="approvePost?.image" [src]="sanitizeImageUrl(approvePost.image)" class="preview-image" alt="Post image" />
+        <div *ngIf="!approvePost?.image" class="preview-image placeholder-img d-flex align-items-center justify-content-center text-muted">
+          No Image
+        </div>
+        <div class="preview-card">
+          <h5>Description</h5>
+          <p>{{ approvePost?.description || 'No description' }}</p>
+        </div>
+        <div *ngIf="approvePost?.hashtags?.length" class="preview-card">
+          <h5>Hashtags</h5>
+          <div>
+            <span class="tag" *ngFor="let tag of approvePost?.hashtags">#{{ tag }}</span>
+          </div>
+        </div>
+        <div *ngIf="approvePost?.imagePrompt" class="preview-card">
+          <h5>Image Prompt</h5>
+          <p>{{ approvePost?.imagePrompt }}</p>
+        </div>
+      </div>
+      <div class="right-panel">
+        <div class="detail-field">
+          <label class="form-label">Title</label>
+          <p>{{ approvePost?.title || '—' }}</p>
+        </div>
+        <div class="detail-field">
+          <label class="form-label">Platform</label>
+          <p><span class="badge bg-secondary">{{ approvePost?.platform }}</span></p>
+        </div>
+        <div class="detail-field">
+          <label class="form-label">Status</label>
+          <p><span class="badge" [ngClass]="'bg-'+getStatusClass(approvePost?.status)">{{ approvePost?.status }}</span></p>
+        </div>
+        <div class="detail-field">
+          <label class="form-label">Generated At</label>
+          <p>{{ approvePost?.generatedAt ? formatScheduledAt(approvePost?.generatedAt) : '—' }}</p>
+        </div>
+        <div class="detail-field">
+          <label class="form-label">Current Scheduled At</label>
+          <p>{{ formatScheduledAt(approvePost?.scheduledAt) }}</p>
+        </div>
+        <div class="detail-field">
+          <label class="form-label fw-bold" style="color: #f59e0b;">Set Approve Time</label>
+          <input type="datetime-local" class="form-control" [(ngModel)]="approveDateTime" />
+        </div>
+        <div class="detail-footer d-flex gap-2">
+          <button class="btn btn-secondary flex-fill" (click)="closeApprove()">Cancel</button>
+          <button class="btn btn-warning flex-fill fw-semibold" [disabled]="isApproving" (click)="confirmApprove()">
+            <i class="bi" [ngClass]="isApproving ? 'bi-hourglass-split' : 'bi-check-lg'"></i>
+            {{ isApproving ? 'Approving...' : 'Approve this Post' }}
+          </button>
         </div>
       </div>
     </div>

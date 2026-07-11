@@ -2,6 +2,10 @@
   animation: fadeIn 0.4s ease;
 }
 
+.actions-cell {
+  white-space: nowrap;
+}
+
 .badge {
   font-size: 12px;
   padding: 5px 10px;
@@ -138,6 +142,30 @@
 .detail-dialog {
   width: 900px;
   height: 88vh;
+}
+
+/* Approve dialog */
+.approve-dialog {
+  width: 900px;
+  height: 88vh;
+}
+
+.approve-dialog .form-control {
+  background: #1a2332;
+  border: 1px solid #2d3a4a;
+  color: #e2e8f0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.approve-dialog .form-control:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.approve-dialog .form-control::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
 }
 
 /* Detail fields */

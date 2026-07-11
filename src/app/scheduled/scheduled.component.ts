@@ -19,6 +19,10 @@ export class ScheduledComponent implements OnInit {
   postingId: string | null = null;
   showDetailDialog = false;
   selectedPost: any = null;
+  showApproveDialog = false;
+  approvePost: any = null;
+  approveDateTime: string = '';
+  isApproving = false;
 
   total = 0;
   page = 1;
@@ -39,6 +43,7 @@ export class ScheduledComponent implements OnInit {
     { field: 'title', header: 'Title' },
     { field: 'caption', header: 'Caption' },
     { field: 'scheduledAt', header: 'Schedule Date' },
+    { field: 'approvedAt', header: 'Approve Date & Time' },
     { field: 'publishedAt', header: 'Published At' },
     { field: 'status', header: 'Status' }
   ];
@@ -110,7 +115,8 @@ export class ScheduledComponent implements OnInit {
       postId: doc.postId,
       retryCount: doc.retryCount,
       errorMessage: doc.errorMessage,
-      isPublishing: doc.isPublishing
+      isPublishing: doc.isPublishing,
+      approvedAt: doc.approvedAt
     };
   }
 
@@ -208,5 +214,45 @@ export class ScheduledComponent implements OnInit {
 
   closeFilter() {
     this.showFilterDialog = false;
+  }
+
+  openApprove(row: any) {
+    this.approvePost = row;
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + 30);
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    this.approveDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+    this.showApproveDialog = true;
+  }
+
+  closeApprove() {
+    this.showApproveDialog = false;
+    this.approvePost = null;
+    this.approveDateTime = '';
+  }
+
+  confirmApprove() {
+    if (!this.approvePost || !this.approveDateTime) { return; }
+    this.isApproving = true;
+    const scheduledAt = new Date(this.approveDateTime).toISOString();
+    this.scheduledPostService.update(this.approvePost._id, {
+      status: 'Approved',
+      scheduledAt: scheduledAt,
+      approvedAt: scheduledAt
+    }).subscribe({
+      next: () => {
+        this.isApproving = false;
+        this.closeApprove();
+        this.loadScheduledPosts();
+      },
+      error: (err) => {
+        console.error('Failed to approve scheduled post', err);
+        this.isApproving = false;
+      }
+    });
   }
 }
