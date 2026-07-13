@@ -243,7 +243,13 @@ export class ScheduledComponent implements OnInit {
   confirmApprove() {
     if (!this.approvePost || !this.approveDateTime) { return; }
     this.isApproving = true;
-    const scheduledAt = new Date(this.approveDateTime).toISOString();
+    const localDate = new Date(this.approveDateTime);
+    const offset = -localDate.getTimezoneOffset();
+    const sign = offset >= 0 ? '+' : '-';
+    const absOffset = Math.abs(offset);
+    const offsetH = String(Math.floor(absOffset / 60)).padStart(2, '0');
+    const offsetM = String(absOffset % 60).padStart(2, '0');
+    const scheduledAt = this.approveDateTime + ':00' + sign + offsetH + offsetM;
     this.scheduledPostService.update(this.approvePost._id, {
       status: 'Approved',
       scheduledAt: scheduledAt,
